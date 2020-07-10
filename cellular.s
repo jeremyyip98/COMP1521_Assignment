@@ -155,19 +155,20 @@ runEnd:
 	sw	$ra, 0($sp)
 trueReverseLoop:
 	bltz	$s2, trueReverseEnd			# while (g >= 0) {
+	move	$a1, $s2				# Pass in argument g
 
 	jal	print_generation			# jump to print_generation
 
-	move	$s7, $a0
+	#move	$s7, $a0
 
-	move	$a0, $s2					# putchar('\n');
-	li	$v0, 1
-	syscall
+	#move	$a0, $s2					# putchar('\n');
+	#li	$v0, 1
+	#syscall
 
-	li	$a0, '\n'					# putchar('\n');
-	li	$v0, 11
-	syscall
-	move	$a0, $s7
+	#li	$a0, '\n'					# putchar('\n');
+	#li	$v0, 11
+	#syscall
+	#move	$a0, $s7
 
 	addi	$s2, $s2, -1			#	g--;
 	j trueReverseLoop
