@@ -367,18 +367,16 @@ print_generation:
 	sw	$s3, 12($sp)
 	sw	$s4, 16($sp)
 	
-	move	$t0, $a0				# save the argument
+	move	$s7, $s0				# save the world_size
+	move	$s6, $a1				# save the which_generation
 
-	move	$a0, $a1				# printf("%d", which_generation);
+	move	$a0, $s6				# printf("%d", which_generation);
 	li	$v0, 1
 	syscall
 
 	li	$a0, '\t'					# putchar('\t');
 	li	$v0, 11
 	syscall
-
-	move	$a0, $t0				# restore the argument
-	
 
 	li	$s0, 0						# int x = 0;
 	li	$s1, 4						# intsize = sizeof(int)
@@ -387,11 +385,9 @@ print_generation:
 	mul	$s2, $t0, $s1				# rowsize = #cols * intsize
 print_loop:
 
-	move	$s7, $a0				# save the argument
-
-	bge	$s0, $a0, print_end			# while ( x < world_size) {
+	bge	$s0, $s7, print_end			# while ( x < world_size) {
 	
-	mul	$t1, $a1, $s2				# $t1 = row * rowsize
+	mul	$t1, $s6, $s2				# $t1 = row * rowsize
 
 	mul	$t2, $s0, $s1				# $t2 = col * intsize
 
@@ -407,8 +403,6 @@ print_loop:
 	syscall
 
 print_increment:
-	move	$a0, $s7				# restore the argument
-
 	addi	$s0, $s0, 1				# x++;
 	j	print_loop
 print_end:
