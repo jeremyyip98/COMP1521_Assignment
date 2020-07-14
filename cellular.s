@@ -38,7 +38,6 @@ prompt_rule:		.asciiz "Enter rule: "
 error_rule:		.asciiz "Invalid rule\n"
 prompt_n_generations:	.asciiz "Enter how many generations: "
 error_n_generations:	.asciiz "Invalid number of generations\n"
-testing:	.asciiz "--------------testing-------------\n"
 	.text
 
 	#
@@ -139,7 +138,7 @@ positiveGenerations:
 	mul	$t2, $t2, $s4					# offset = col * intsize
 
 	li	$t3, 1
-	sw	$t3, cells($t2)					# cells[0][world_size / 2] = 1;
+	sb	$t3, cells($t2)					# cells[0][world_size / 2] = 1;
 
 	move	$a0, $s0					# $a0 = world_size
 	li	$a1, 1							# int g = 1
@@ -241,7 +240,7 @@ run_generation_loop:
 	mul	$t2, $t2, $s2						# $t2 = col * intsize
 
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
-	lw	$s1, cells($t0)						# left = cells[which_generation - 1][x - 1];
+	lb	$s1, cells($t0)						# left = cells[which_generation - 1][x - 1];
 
 initialise_centre:
 
@@ -251,7 +250,7 @@ initialise_centre:
 	mul	$t2, $s0, $s2						# $t2 = col * intsize
 
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
-	lw	$s4, cells($t0)						# centre = cells[which_generation - 1][x];
+	lb	$s4, cells($t0)						# centre = cells[which_generation - 1][x];
 
 	li	$s5, 0								# int right = 0
 
@@ -265,7 +264,7 @@ initialise_centre:
 	mul	$t2, $t2, $s2						# $t2 = col * intsize
 
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
-	lw	$s5, cells($t0)						# right = cells[which_generation - 1][x - 1];
+	lb	$s5, cells($t0)						# right = cells[which_generation - 1][x - 1];
 	
 initialise_state:
 
@@ -293,7 +292,7 @@ initialise_state:
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
 
 	li	$t1, 1
-	sw	$t1, cells($t0)						# cells[which_generation][x] = 1;
+	sb	$t1, cells($t0)						# cells[which_generation][x] = 1;
 
 	j	increment
 setZero:
@@ -304,7 +303,7 @@ setZero:
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
 
 	li	$t1, 0
-	sw	$t1, cells($t0)						# cells[which_generation][x] = 0;
+	sb	$t1, cells($t0)						# cells[which_generation][x] = 0;
 
 increment:
 	addi	$s0, $s0, 1						# x++
@@ -375,7 +374,7 @@ print_loop:
 
 	add	$t0, $t1, $t2						# offset = $t1 + $t2
 
-	lw	$t1, cells($t0)						# $t1 = cells[which_generation][x];
+	lb	$t1, cells($t0)						# $t1 = cells[which_generation][x];
 
 	beqz	$t1, deadChar					# if cells[which_generation][x] is false, then deadChar
 
