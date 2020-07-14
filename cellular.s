@@ -1,7 +1,7 @@
 ########################################################################
 # COMP1521 20T2 --- assignment 1: a cellular automaton renderer
 #
-# Written by <<YOU>>, July 2020.
+# Written by <<Yip Jeremy Chung Lum>>, July 2020.
 
 
 # Maximum and minimum values for the 3 parameters.
@@ -50,19 +50,8 @@ testing:	.asciiz "--------------testing-------------\n"
 	#
 
 main:
-	#
-	# REPLACE THIS COMMENT WITH YOUR CODE FOR `main'.
-	#
-
-
-	# replace the syscall below with
-	#
-	# li	$v0, 0
-	# jr	$ra
-	#
-	# if your code for `main' preserves $ra by saving it on the
-	# stack, and restoring it after calling `print_world' and
-	# `run_generation'.  [ there are style marks for this ]
+	addi	$sp, $sp, -4			# Epilogue
+	sw	$ra, 0($sp)
 
 	la	$a0, prompt_world_size		# printf("Enter world size: ");
 	li	$v0, 4
@@ -75,7 +64,15 @@ main:
 
 	blt	$s0, MIN_WORLD_SIZE, invalidWorldSize	# if (world_size < MIN_WORLD_SIZE
 	bgt	$s0, MAX_WORLD_SIZE, invalidWorldSize	# || world_size > MAX_WORLD_SIZE), then invalidWorldSize
-	
+	j	else_validWorldSize
+invalidWorldSize:
+	la	$a0, error_world_size		# printf("Invalid world size\n");
+	li	$v0, 4
+	syscall
+
+	li	$v0, 1
+	jr	$ra							# return 1;
+else_validWorldSize:
 	la	$a0, prompt_rule		# printf("Enter rule: ");
 	li	$v0, 4
 	syscall
@@ -87,7 +84,15 @@ main:
 
 	blt	$s1, MIN_RULE, invalidRule	# if (rule < MIN_RUL
 	bgt	$s1, MAX_RULE, invalidRule	# || rule > MAX_RULE), then invalidRule
+	j	else_validRule
+invalidRule:
+	la	$a0, error_rule				# printf("Invalid rule\n");
+	li	$v0, 4
+	syscall
 
+	li	$v0, 1
+	jr	$ra							# return 1;
+else_validRule:
 	la	$a0, prompt_n_generations	# printf("Enter how many generations: ");
 	li	$v0, 4
 	syscall
@@ -99,7 +104,15 @@ main:
 
 	blt	$s2, MIN_GENERATIONS, invalidGenerations	# if (n_generations < MIN_GENERATIONS
 	bgt	$s1, MAX_GENERATIONS, invalidGenerations	# || n_generations > MAX_GENERATIONS), then invalidGenerations
+	j	else_validGenerations
+invalidGenerations:
+	la	$a0, error_n_generations	# printf("Invalid number of generations\n");
+	li	$v0, 4
+	syscall
 
+	li	$v0, 1
+	jr	$ra							# return 1;
+else_validGenerations:
 	li	$a0, '\n'					# putchar('\n');
 	li	$v0, 11
 	syscall
@@ -132,13 +145,7 @@ positiveGenerations:
 runLoop:		
 	bgt	$a1, $s2, runEnd		# while (g <= n_generations){
 
-	addi	$sp, $sp, -4		# Save the return register
-	sw	$ra, 0($sp)
-
 	jal	run_generation			# jump to run_generation
-
-	lw	$ra, 0($sp)				# load the return register
-	addi	$sp, $sp, 4
 
 	addi	$a1, $a1, 1			# g++;
 	j	runLoop
@@ -150,77 +157,33 @@ runEnd:
 	beqz	$s3, falseReverse		# if reverse is false, then falseReverse
 
 	move	$a1, $s2				# int g = n_generations
-
-	addi	$sp, $sp, -4			# Save register
-	sw	$ra, 0($sp)
 trueReverseLoop:
-	bltz	$s2, trueReverseEnd			# while (g >= 0) {
+	bltz	$s2, mainEnd			# while (g >= 0) {
 	move	$a1, $s2				# Pass in argument g
 
 	jal	print_generation			# jump to print_generation
 
-	#move	$s7, $a0
-
-	#move	$a0, $s2					# putchar('\n');
-	#li	$v0, 1
-	#syscall
-
-	#li	$a0, '\n'					# putchar('\n');
-	#li	$v0, 11
-	#syscall
-	#move	$a0, $s7
-
 	addi	$s2, $s2, -1			#	g--;
 	j trueReverseLoop
 trueReverseEnd:
-	lw	$ra, 0($sp)
-	addi	$sp, $sp, 4
-mainEnd:
-	li	$v0, 0
-	jr	$ra
-
-
-
-invalidWorldSize:
-	la	$a0, error_world_size		# printf("Invalid world size\n");
-	li	$v0, 4
-	syscall
-
-	li	$v0, 1
-	jr	$ra							# return 1;
-invalidRule:
-	la	$a0, error_rule				# printf("Invalid rule\n");
-	li	$v0, 4
-	syscall
-
-	li	$v0, 1
-	jr	$ra							# return 1;
-invalidGenerations:
-	la	$a0, error_n_generations	# printf("Invalid number of generations\n");
-	li	$v0, 4
-	syscall
-
-	li	$v0, 1
-	jr	$ra							# return 1;
+	j	mainEnd
 falseReverse:
-	addi	$sp, $sp, -4			# Save register
-	sw	$ra, 0($sp)
-
 	li	$a1, 0						# int g = 0
 falseReverseLoop:
-	bgt	$a1, $s2, falseReverseEnd	# while (g <= n_generations){
+	bgt	$a1, $s2, mainEnd			# while (g <= n_generations){
 	move	$a0, $s0				# $a0 = world_size	
 
 	jal	print_generation			# jump to print_generation
 	
 	addi	$a1, $a1, 1				# g++;
 	j	falseReverseLoop
-falseReverseEnd:
-	lw	$ra, 0($sp)
+
+mainEnd:
+	lw	$ra, 0($sp)					# Prologue
 	addi	$sp, $sp, 4
 
-	j mainEnd
-
+	li	$v0, 0
+	jr	$ra
 
 
 	#
@@ -237,18 +200,21 @@ falseReverseEnd:
 	#
 
 run_generation:
-	addi	$sp, $sp, -20
-	sw	$s0, 0($sp)			# Storing 4 bit off from $sp, because the the first 4 bit already stored $ra
-	sw	$s1, 4($sp)
-	sw	$s2, 8($sp)
-	sw	$s3, 12($sp)
-	sw	$s4, 16($sp)
+	addi	$sp, $sp, -24					# Epilogue
+	sw	$ra, 0($sp)
+	sw	$s0, 4($sp)
+	sw	$s1, 8($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 16($sp)
+	sw	$s4, 20($sp)
+
+	move	$s7, $s0				# save the world_size
+	move	$s6, $a1				# save the which_generation
 
 	li	$s0, 0				# int x = 0
-
 run_generation_loop:
 
-	bge	$s0, $a0,	run_generation_end		# while (x < world_size) {
+	bge	$s0, $s7,	run_generation_end		# while (x < world_size) {
 
 	li	$s1, 0								# int left = 0
 	li	$s2, 4								# intsize = sizeof(int)
@@ -258,7 +224,7 @@ run_generation_loop:
 
 	blez	$s0, initialise_centre			# if (x > 0) {
 
-	addi	$t0, $a1, -1					# row = which_generation - 1
+	addi	$t0, $s6, -1					# row = which_generation - 1
 	mul	$t1, $t0, $s3						# $t1 = row * rowsize
 
 	addi $t2, $s0, -1						# $t2 = x - 1
@@ -269,7 +235,7 @@ run_generation_loop:
 
 initialise_centre:
 
-	addi	$t0, $a1, -1					# row = which_generation - 1
+	addi	$t0, $s6, -1					# row = which_generation - 1
 	mul	$t1, $t0, $s3						# $t1 = row * rowsize
 
 	mul	$t2, $s0, $s2						# $t2 = col * intsize
@@ -279,10 +245,10 @@ initialise_centre:
 
 	li	$s5, 0								# int right = 0
 
-	add	$t0, $a0, -1						# $t0 = world_size - 1
+	add	$t0, $s7, -1						# $t0 = world_size - 1
 	bge	$s0, $t0, initialise_state			# if (x < world_size - 1) {
 
-	addi	$t0, $a1, -1					# row = which_generation - 1
+	addi	$t0, $s6, -1					# row = which_generation - 1
 	mul	$t1, $t0, $s3						# $t1 = row * rowsize
 
 	addi $t2, $s0, 1						# $t2 = x + 1
@@ -310,7 +276,7 @@ initialise_state:
 
 	beqz	$s1, setZero
 
-	mul	$t1, $a1, $s3						# $t1 = row * rowsize
+	mul	$t1, $s6, $s3						# $t1 = row * rowsize
 
 	mul	$t2, $s0, $s2						# $t2 = col * intsize
 
@@ -321,7 +287,7 @@ initialise_state:
 
 	j	increment
 setZero:
-	mul	$t1, $a1, $s3						# $t1 = row * rowsize
+	mul	$t1, $s6, $s3						# $t1 = row * rowsize
 
 	mul	$t2, $s0, $s2						# $t2 = col * intsize
 
@@ -335,13 +301,13 @@ increment:
 
 	j	run_generation_loop
 run_generation_end:
-
-	lw	$s4, 16($sp)
-	lw	$s3, 12($sp)
-	lw	$s2, 8($sp)
-	lw	$s1, 4($sp)
-	lw	$s0, 0($sp)
-	addi	$sp, $sp, 20
+	lw	$s4, 20($sp)						# Prologue
+	lw	$s3, 16($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 8($sp)
+	lw	$s0, 4($sp)
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 24
 
 	jr	$ra
 
@@ -361,12 +327,14 @@ run_generation_end:
 	#
 
 print_generation:
-	addi	$sp, $sp, -20
-	sw	$s0, 0($sp)			# Storing 4 bit off from $sp, because the the first 4 bit already stored $ra
-	sw	$s1, 4($sp)
-	sw	$s2, 8($sp)
-	sw	$s3, 12($sp)
-	sw	$s4, 16($sp)
+	addi	$sp, $sp, -24
+	sw	$ra, 0($sp)					# Epilogue
+	sw	$s0, 4($sp)
+	sw	$s1, 8($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 16($sp)
+	sw	$s4, 20($sp)
+
 	
 	move	$s7, $s0				# save the world_size
 	move	$s6, $a1				# save the which_generation
@@ -403,6 +371,12 @@ print_loop:
 	li	$v0, 11
 	syscall
 
+	j	print_increment
+deadChar:
+	li	$t0, DEAD_CHAR
+	move	$a0, $t0
+	li	$v0, 11
+	syscall
 print_increment:
 	addi	$s0, $s0, 1				# x++;
 	j	print_loop
@@ -411,19 +385,12 @@ print_end:
 	li	$v0, 11
 	syscall
 
-	lw	$s0, 0($sp)
-	lw	$s1, 4($sp)
-	lw	$s2, 8($sp)
-	lw	$s3, 12($sp)
-	lw	$s4, 16($sp)
-	addi	$sp, $sp, 20
 
+	lw	$s4, 20($sp)				# Prologue
+	lw	$s3, 16($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 8($sp)
+	lw	$s0, 4($sp)
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 24
 	jr	$ra
-
-deadChar:
-	li	$t0, DEAD_CHAR
-	move	$a0, $t0
-	li	$v0, 11
-	syscall
-
-	j	print_increment
