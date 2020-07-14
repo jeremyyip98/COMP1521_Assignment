@@ -42,144 +42,147 @@ testing:	.asciiz "--------------testing-------------\n"
 	.text
 
 	#
-	# REPLACE THIS COMMENT WITH A LIST OF THE REGISTERS USED IN
-	# `main', AND THE PURPOSES THEY ARE ARE USED FOR
+	# $s0 = world_size
+	# $s1 = rule
+	# $s2 = n_generations
+	# $s3 = reverse
+	# $s4 = intsize
 	#
-	# YOU SHOULD ALSO NOTE WHICH REGISTERS DO NOT HAVE THEIR
-	# ORIGINAL VALUE WHEN `run_generation' FINISHES
+	# REGISTERS DO NOT HAVE THEIR ORIGINAL VALUE WHEN `run_generation' FINISHES:
+	# $s5, $s6, $s7
 	#
 
 main:
-	addi	$sp, $sp, -4			# Epilogue
+	addi	$sp, $sp, -4				# Epilogue
 	sw	$ra, 0($sp)
 
-	la	$a0, prompt_world_size		# printf("Enter world size: ");
+	la	$a0, prompt_world_size			# printf("Enter world size: ");
 	li	$v0, 4
 	syscall
 
-	li	$v0, 5						# scanf("%d", &world_size);
+	li	$v0, 5							# scanf("%d", &world_size);
 	syscall
 
-	move	$s0, $v0		 		# $s0 = world_size
+	move	$s0, $v0		 			# $s0 = world_size
 
 	blt	$s0, MIN_WORLD_SIZE, invalidWorldSize	# if (world_size < MIN_WORLD_SIZE
 	bgt	$s0, MAX_WORLD_SIZE, invalidWorldSize	# || world_size > MAX_WORLD_SIZE), then invalidWorldSize
 	j	else_validWorldSize
 invalidWorldSize:
-	la	$a0, error_world_size		# printf("Invalid world size\n");
+	la	$a0, error_world_size			# printf("Invalid world size\n");
 	li	$v0, 4
 	syscall
 
 	li	$v0, 1
-	jr	$ra							# return 1;
+	jr	$ra								# return 1;
 else_validWorldSize:
-	la	$a0, prompt_rule		# printf("Enter rule: ");
+	la	$a0, prompt_rule				# printf("Enter rule: ");
 	li	$v0, 4
 	syscall
 
-	li	$v0, 5						# scanf("%d", &rule);
+	li	$v0, 5							# scanf("%d", &rule);
 	syscall
 
-	move	$s1, $v0		 		# $s1 = rule
+	move	$s1, $v0		 			# $s1 = rule
 
-	blt	$s1, MIN_RULE, invalidRule	# if (rule < MIN_RUL
-	bgt	$s1, MAX_RULE, invalidRule	# || rule > MAX_RULE), then invalidRule
+	blt	$s1, MIN_RULE, invalidRule		# if (rule < MIN_RUL
+	bgt	$s1, MAX_RULE, invalidRule		# || rule > MAX_RULE), then invalidRule
 	j	else_validRule
 invalidRule:
-	la	$a0, error_rule				# printf("Invalid rule\n");
+	la	$a0, error_rule					# printf("Invalid rule\n");
 	li	$v0, 4
 	syscall
 
 	li	$v0, 1
-	jr	$ra							# return 1;
+	jr	$ra								# return 1;
 else_validRule:
-	la	$a0, prompt_n_generations	# printf("Enter how many generations: ");
+	la	$a0, prompt_n_generations		# printf("Enter how many generations: ");
 	li	$v0, 4
 	syscall
 
-	li	$v0, 5						# scanf("%d", &n_generations);
+	li	$v0, 5							# scanf("%d", &n_generations);
 	syscall
 
-	move	$s2, $v0		 		# $s2 = n_generations
+	move	$s2, $v0		 			# $s2 = n_generations
 
 	blt	$s2, MIN_GENERATIONS, invalidGenerations	# if (n_generations < MIN_GENERATIONS
 	bgt	$s1, MAX_GENERATIONS, invalidGenerations	# || n_generations > MAX_GENERATIONS), then invalidGenerations
 	j	else_validGenerations
 invalidGenerations:
-	la	$a0, error_n_generations	# printf("Invalid number of generations\n");
+	la	$a0, error_n_generations		# printf("Invalid number of generations\n");
 	li	$v0, 4
 	syscall
 
 	li	$v0, 1
-	jr	$ra							# return 1;
+	jr	$ra								# return 1;
 else_validGenerations:
-	li	$a0, '\n'					# putchar('\n');
+	li	$a0, '\n'						# putchar('\n');
 	li	$v0, 11
 	syscall
 
-	li	$s3, 0						# int reverse = 0;
-	bgez	$s2, positiveGenerations				# if n_generations >= 0,then positiveGenerations
+	li	$s3, 0							# int reverse = 0;
+	bgez	$s2, positiveGenerations	# if n_generations >= 0,then positiveGenerations
 
-	li	$s3, 1						# reverse = 1;
+	li	$s3, 1							# reverse = 1;
 	li	$t0, 0
-	sub	$s2, $t0, $s2				# n_generations = -n_generations;
+	sub	$s2, $t0, $s2					# n_generations = -n_generations;
 positiveGenerations:
 
-	li	$s4, 4					# intsize = sizeof(int)
+	li	$s4, 4							# intsize = sizeof(int)
 	li	$t0, 2
-	move	$t1, $s0			# $t1 = world_size
-	div		$t1, $t0			# col = world_size / 2
-	mflo	$t2					# $t2 = floor($t1 / $t0) 
-	mfhi	$t3					# $t3 = $t1 mod $t0 
+	move	$t1, $s0					# $t1 = world_size
+	div		$t1, $t0					# col = world_size / 2
+	mflo	$t2							# $t2 = floor($t1 / $t0) 
+	mfhi	$t3							# $t3 = $t1 mod $t0 
 
-								# since row is 0, then we only have to calculate the column for the offset 
-	mul	$t2, $t2, $s4			# offset = col * intsize
+										# since row is 0, then we only have to calculate the column for the offset 
+	mul	$t2, $t2, $s4					# offset = col * intsize
 
 	li	$t3, 1
-	sw	$t3, cells($t2)			# cells[0][world_size / 2] = 1;
+	sw	$t3, cells($t2)					# cells[0][world_size / 2] = 1;
 
-	move	$a0, $s0			# $a0 = world_size
-	li	$a1, 1					# int g = 1
-	move	$a2, $s1			# $a2 = rule
+	move	$a0, $s0					# $a0 = world_size
+	li	$a1, 1							# int g = 1
+	move	$a2, $s1					# $a2 = rule
 
 runLoop:		
-	bgt	$a1, $s2, runEnd		# while (g <= n_generations){
+	bgt	$a1, $s2, runEnd				# while (g <= n_generations){
 
-	jal	run_generation			# jump to run_generation
+	jal	run_generation					# jump to run_generation
 
-	addi	$a1, $a1, 1			# g++;
+	addi	$a1, $a1, 1					# g++;
 	j	runLoop
 runEnd:
-	move	$a0, $s0				# $a0 = world_size
+	move	$a0, $s0					# $a0 = world_size
 	li	$t0, 0
-	move	$a1, $t0				# int g = 0
+	move	$a1, $t0					# int g = 0
 
-	beqz	$s3, falseReverse		# if reverse is false, then falseReverse
+	beqz	$s3, falseReverse			# if reverse is false, then falseReverse
 
-	move	$a1, $s2				# int g = n_generations
+	move	$a1, $s2					# int g = n_generations
 trueReverseLoop:
-	bltz	$s2, mainEnd			# while (g >= 0) {
-	move	$a1, $s2				# Pass in argument g
+	bltz	$s2, mainEnd				# while (g >= 0) {
+	move	$a1, $s2					# Pass in argument g
 
-	jal	print_generation			# jump to print_generation
+	jal	print_generation				# jump to print_generation
 
-	addi	$s2, $s2, -1			#	g--;
+	addi	$s2, $s2, -1				#	g--;
 	j trueReverseLoop
 trueReverseEnd:
 	j	mainEnd
 falseReverse:
-	li	$a1, 0						# int g = 0
+	li	$a1, 0							# int g = 0
 falseReverseLoop:
-	bgt	$a1, $s2, mainEnd			# while (g <= n_generations){
-	move	$a0, $s0				# $a0 = world_size	
+	bgt	$a1, $s2, mainEnd				# while (g <= n_generations){
+	move	$a0, $s0					# $a0 = world_size	
 
-	jal	print_generation			# jump to print_generation
+	jal	print_generation				# jump to print_generation
 	
-	addi	$a1, $a1, 1				# g++;
+	addi	$a1, $a1, 1					# g++;
 	j	falseReverseLoop
 
 mainEnd:
-	lw	$ra, 0($sp)					# Prologue
+	lw	$ra, 0($sp)						# Prologue
 	addi	$sp, $sp, 4
 
 	li	$v0, 0
@@ -192,11 +195,18 @@ mainEnd:
 	#
 
 	#
-	# REPLACE THIS COMMENT WITH A LIST OF THE REGISTERS USED IN
-	# `run_generation', AND THE PURPOSES THEY ARE ARE USED FOR
+	# $a0 = $s7 = world_size
+	# $a1 = $s6 = which_generation
+	# $a2 = rule
+	# $s0 = x
+	# $s1 = left
+	# $s2 = intsize
+	# $s3 = rowsize
+	# $s4 = cetnre
+	# $s5 = right
 	#
-	# YOU SHOULD ALSO NOTE WHICH REGISTERS DO NOT HAVE THEIR
-	# ORIGINAL VALUE WHEN `run_generation' FINISHES
+	# REGISTERS DO NOT HAVE THEIR ORIGINAL VALUE WHEN `run_generation' FINISHES:
+	# $s5, $s6, $s7
 	#
 
 run_generation:
@@ -208,10 +218,10 @@ run_generation:
 	sw	$s3, 16($sp)
 	sw	$s4, 20($sp)
 
-	move	$s7, $s0				# save the world_size
-	move	$s6, $a1				# save the which_generation
+	move	$s7, $s0						# save the world_size
+	move	$s6, $a1						# save the which_generation
 
-	li	$s0, 0				# int x = 0
+	li	$s0, 0								# int x = 0
 run_generation_loop:
 
 	bge	$s0, $s7,	run_generation_end		# while (x < world_size) {
@@ -319,16 +329,19 @@ run_generation_end:
 	#
 
 	#
-	# REPLACE THIS COMMENT WITH A LIST OF THE REGISTERS USED IN
-	# `print_generation', AND THE PURPOSES THEY ARE ARE USED FOR
+	# $a0 = $s7 = world_size
+	# $a1 = $s6 = which_generation
+	# $s0 = x
+	# $s1 = intsize
+	# $s2 = rowsize
 	#
-	# YOU SHOULD ALSO NOTE WHICH REGISTERS DO NOT HAVE THEIR
-	# ORIGINAL VALUE WHEN `print_generation' FINISHES
+	# REGISTERS DO NOT HAVE THEIR ORIGINAL VALUE WHEN `print_generation' FINISHES:
+	# $a0, $s6, $s7
 	#
 
 print_generation:
-	addi	$sp, $sp, -24
-	sw	$ra, 0($sp)					# Epilogue
+	addi	$sp, $sp, -24					# Epilogue
+	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
 	sw	$s1, 8($sp)
 	sw	$s2, 12($sp)
@@ -336,35 +349,35 @@ print_generation:
 	sw	$s4, 20($sp)
 
 	
-	move	$s7, $s0				# save the world_size
-	move	$s6, $a1				# save the which_generation
+	move	$s7, $s0						# save the world_size
+	move	$s6, $a1						# save the which_generation
 
-	move	$a0, $s6				# printf("%d", which_generation);
+	move	$a0, $s6						# printf("%d", which_generation);
 	li	$v0, 1
 	syscall
 
-	li	$a0, '\t'					# putchar('\t');
+	li	$a0, '\t'							# putchar('\t');
 	li	$v0, 11
 	syscall
 
-	li	$s0, 0						# int x = 0;
-	li	$s1, 4						# intsize = sizeof(int)
+	li	$s0, 0								# int x = 0;
+	li	$s1, 4								# intsize = sizeof(int)
 	
 	li	$t0, MAX_WORLD_SIZE
-	mul	$s2, $t0, $s1				# rowsize = #cols * intsize
+	mul	$s2, $t0, $s1						# rowsize = #cols * intsize
 print_loop:
 
-	bge	$s0, $s7, print_end			# while ( x < world_size) {
+	bge	$s0, $s7, print_end					# while ( x < world_size) {
 	
-	mul	$t1, $s6, $s2				# $t1 = row * rowsize
+	mul	$t1, $s6, $s2						# $t1 = row * rowsize
 
-	mul	$t2, $s0, $s1				# $t2 = col * intsize
+	mul	$t2, $s0, $s1						# $t2 = col * intsize
 
-	add	$t0, $t1, $t2				# offset = $t1 + $t2
+	add	$t0, $t1, $t2						# offset = $t1 + $t2
 
-	lw	$t1, cells($t0)				# $t1 = cells[which_generation][x];
+	lw	$t1, cells($t0)						# $t1 = cells[which_generation][x];
 
-	beqz	$t1, deadChar			# if cells[which_generation][x] is false, then deadChar
+	beqz	$t1, deadChar					# if cells[which_generation][x] is false, then deadChar
 
 	li	$t0, ALIVE_CHAR
 	move	$a0, $t0
@@ -378,15 +391,14 @@ deadChar:
 	li	$v0, 11
 	syscall
 print_increment:
-	addi	$s0, $s0, 1				# x++;
+	addi	$s0, $s0, 1						# x++;
 	j	print_loop
 print_end:
-	li	$a0, '\n'					# putchar('\n');
+	li	$a0, '\n'							# putchar('\n');
 	li	$v0, 11
 	syscall
 
-
-	lw	$s4, 20($sp)				# Prologue
+	lw	$s4, 20($sp)						# Prologue
 	lw	$s3, 16($sp)
 	lw	$s2, 12($sp)
 	lw	$s1, 8($sp)
